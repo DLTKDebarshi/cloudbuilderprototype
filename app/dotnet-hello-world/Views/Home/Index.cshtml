@@ -1,0 +1,111 @@
+@{
+    ViewData["Title"] = "Cloud Builder Hello World";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="card-title mb-0">
+                        <i class="fas fa-cloud"></i> Cloud Builder Prototype
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="fas fa-check-circle"></i> Deployment Successful!
+                        </h4>
+                        <p class="mb-0">@ViewData["Message"]</p>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-server"></i> Server Information
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>Host:</strong> @ViewData["Environment"]<br>
+                                        <strong>Time:</strong> @ViewData["DateTime"]<br>
+                                        <strong>Version:</strong> @ViewData["Version"]
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-cogs"></i> Technology Stack
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>Platform:</strong> .NET 6.0<br>
+                                        <strong>Web Server:</strong> IIS<br>
+                                        <strong>Cloud:</strong> AWS EC2<br>
+                                        <strong>OS:</strong> Windows Server 2019
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5><i class="fas fa-tools"></i> Infrastructure Components</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-cube text-primary"></i> Terraform Modules
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-network-wired text-success"></i> VPC & Networking
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-shield-alt text-warning"></i> Security Groups
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-play text-primary"></i> Ansible Playbooks
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-windows text-info"></i> IIS Configuration
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-cog text-secondary"></i> System Management
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fab fa-github text-dark"></i> GitHub Actions
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-rocket text-danger"></i> CI/CD Pipeline
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="fas fa-sync text-success"></i> Auto Deployment
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="/Home/About" class="btn btn-primary">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </a>
+                        <a href="/Home/Health" class="btn btn-success ms-2">
+                            <i class="fas fa-heartbeat"></i> Health Check
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

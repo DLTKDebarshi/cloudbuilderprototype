@@ -1,0 +1,82 @@
+@{
+    ViewData["Title"] = "About - Cloud Builder Prototype";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> About Cloud Builder Prototype
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <h4 class="alert-heading">Infrastructure as Code Solution</h4>
+                        <p>@ViewData["Message"]</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-cube"></i> Terraform Modules</h5>
+                            <ul>
+                                <li><strong>Networking:</strong> VPC, Subnets, Internet Gateway, Route Tables</li>
+                                <li><strong>Compute:</strong> EC2 Instances, Key Pairs</li>
+                                <li><strong>Security:</strong> Security Groups, Firewall Rules</li>
+                                <li><strong>Services:</strong> Elastic IP, Route53, Load Balancers</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-play"></i> Ansible Automation</h5>
+                            <ul>
+                                <li><strong>IIS Configuration:</strong> Web server setup and management</li>
+                                <li><strong>System Management:</strong> Windows updates and services</li>
+                                <li><strong>File Management:</strong> Directory and permission setup</li>
+                                <li><strong>AWS Integration:</strong> Instance management and credentials</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="fab fa-github"></i> CI/CD Pipeline Features</h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Terraform Deployment</h6>
+                                            <p class="card-text">Automated infrastructure provisioning with proper validation and planning.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Ansible Configuration</h6>
+                                            <p class="card-text">Automated server configuration and application deployment.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Application Deployment</h6>
+                                            <p class="card-text">Continuous deployment of .NET applications to Windows IIS.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
