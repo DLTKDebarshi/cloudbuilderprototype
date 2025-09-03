@@ -1,0 +1,182 @@
+{
+  "terraformModules": {
+    "networking": {
+      "vpc": {
+        "name": "vpc",
+        "description": "Virtual Private Cloud configuration",
+        "type": "network"
+      },
+      "publicSubnet": {
+        "name": "public_subnet",
+        "description": "Public subnet configuration",
+        "type": "network"
+      },
+      "internetGateway": {
+        "name": "internet_gateway",
+        "description": "Internet gateway for public access",
+        "type": "network"
+      },
+      "routeTables": {
+        "name": "route_tables",
+        "description": "Route table configuration",
+        "type": "network"
+      }
+    },
+    "compute": {
+      "ec2": {
+        "name": "ec2",
+        "description": "EC2 instance configuration",
+        "type": "compute"
+      },
+      "windowsServer": {
+        "name": "windows_server",
+        "description": "Windows Server EC2 instance",
+        "type": "compute"
+      },
+      "keyPair": {
+        "name": "key_pair",
+        "description": "SSH key pair for instance access",
+        "type": "security"
+      }
+    },
+    "security": {
+      "securityGroup": {
+        "name": "security_group",
+        "description": "Security group rules",
+        "type": "security"
+      }
+    },
+    "networking_services": {
+      "elasticPublicIp": {
+        "name": "elastic_public_ip",
+        "description": "Elastic IP for static public addressing",
+        "type": "network"
+      },
+      "route53": {
+        "name": "route53",
+        "description": "DNS management with Route 53",
+        "type": "network"
+      },
+      "loadBalancer": {
+        "name": "lb",
+        "description": "Load balancer configuration",
+        "type": "network"
+      }
+    }
+  },
+  "ansiblePlaybooks": {
+    "windowsModules": {
+      "iisConfiguration": [
+        {
+          "module": "ansible.windows.win_feature",
+          "description": "Install IIS features",
+          "category": "web_server"
+        },
+        {
+          "module": "community.windows.win_iis_website",
+          "description": "Manage IIS websites",
+          "category": "web_server"
+        },
+        {
+          "module": "community.windows.win_iis_webapppool",
+          "description": "Manage application pools",
+          "category": "web_server"
+        },
+        {
+          "module": "community.windows.win_iis_webbinding",
+          "description": "Configure IIS bindings",
+          "category": "web_server"
+        }
+      ],
+      "systemManagement": [
+        {
+          "module": "ansible.windows.win_service",
+          "description": "Manage Windows services",
+          "category": "system"
+        },
+        {
+          "module": "ansible.windows.win_reboot",
+          "description": "Reboot Windows",
+          "category": "system"
+        },
+        {
+          "module": "ansible.windows.win_shell",
+          "description": "Execute PowerShell commands",
+          "category": "system"
+        }
+      ],
+      "fileManagement": [
+        {
+          "module": "ansible.windows.win_file",
+          "description": "Create directories",
+          "category": "file_system"
+        },
+        {
+          "module": "ansible.windows.win_copy",
+          "description": "Copy files to Windows",
+          "category": "file_system"
+        }
+      ],
+      "networking": [
+        {
+          "module": "community.windows.win_firewall_rule",
+          "description": "Configure Windows Firewall",
+          "category": "network_security"
+        },
+        {
+          "module": "ansible.windows.win_uri",
+          "description": "Test HTTP endpoints",
+          "category": "network_testing"
+        }
+      ],
+      "aws": [
+        {
+          "module": "amazon.aws.ec2_win_password",
+          "description": "Retrieve Windows password",
+          "category": "aws_integration"
+        }
+      ]
+    }
+  },
+  "pipelineConfiguration": {
+    "type": "github_actions",
+    "pipelines": [
+      {
+        "name": "deploy-terraform",
+        "description": "Deploy Terraform code",
+        "workflow": {
+          "trigger": ["push", "pull_request"],
+          "jobs": {
+            "terraform": {
+              "steps": [
+                "checkout",
+                "setup_terraform",
+                "terraform_init",
+                "terraform_plan",
+                "terraform_apply"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "name": "deploy-ansible",
+        "description": "Deploy Ansible playbooks on EC2 instances",
+        "workflow": {
+          "trigger": ["workflow_dispatch", "push"],
+          "jobs": {
+            "ansible": {
+              "steps": [
+                "checkout",
+                "setup_python",
+                "install_ansible",
+                "configure_aws_credentials",
+                "run_playbook"
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+---
+- name: Configure IIS on Windows Server
+  hosts: windows
+  gather_facts: false
+  vars:
+    ansible_user: Administrator
+    ansible_password: "{{ windows_password }}"
+    ansible_connection: winrm
+    ansible_winrm_server_cert_validation: ignore
+    ansible_winrm_transport: basic
+    ansible_port: 5985
+
+  tasks:
+    - name: Install IIS Web Server feature
+      ansible.windows.win_feature:
+        name: IIS-WebServerRole
+        state: present
+        include_management_tools: true
+      register: iis_install
+
+    - name: Install IIS Management Console
+      ansible.windows.win_feature:
+        name: IIS-ManagementConsole
+        state: present
+
+    - name: Install ASP.NET 4.8
+      ansible.windows.win_feature:
+        name: IIS-ASPNET45
+        state: present
+
+    - name: Create application pool
+      community.windows.win_iis_webapppool:
+        name: "{{ app_pool_name | default('DefaultAppPool') }}"
+        state: present
+        attributes:
+          processModel.identityType: ApplicationPoolIdentity
+          recycling.periodicRestart.time: "1.05:00:00"
+
+    - name: Create IIS website
+      community.windows.win_iis_website:
+        name: "{{ website_name | default('Default Web Site') }}"
+        state: present
+        port: "{{ website_port | default('80') }}"
+        ip: "*"
+        hostname: "{{ website_hostname | default('') }}"
+        application_pool: "{{ app_pool_name | default('DefaultAppPool') }}"
+        physical_path: "{{ website_path | default('C:\\inetpub\\wwwroot') }}"
+
+    - name: Configure IIS binding
+      community.windows.win_iis_webbinding:
+        name: "{{ website_name | default('Default Web Site') }}"
+        port: "{{ website_port | default('80') }}"
+        ip: "*"
+        state: present
+
+    - name: Start IIS service
+      ansible.windows.win_service:
+        name: W3SVC
+        state: started
+        start_mode: auto
+
+    - name: Reboot if IIS installation requires it
+      ansible.windows.win_reboot:
+        reboot_timeout: 600
+      when: iis_install.reboot_required

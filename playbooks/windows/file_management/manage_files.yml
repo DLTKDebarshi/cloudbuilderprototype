@@ -1,0 +1,48 @@
+---
+- name: Windows File Management
+  hosts: windows
+  gather_facts: false
+  vars:
+    ansible_user: Administrator
+    ansible_password: "{{ windows_password }}"
+    ansible_connection: winrm
+    ansible_winrm_server_cert_validation: ignore
+    ansible_winrm_transport: basic
+    ansible_port: 5985
+
+  tasks:
+    - name: Create application directories
+      ansible.windows.win_file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "C:\\Apps"
+        - "C:\\Apps\\WebApp"
+        - "C:\\Apps\\Logs"
+        - "C:\\Temp"
+
+    - name: Set directory permissions
+      ansible.windows.win_shell: |
+        icacls "C:\Apps" /grant "IIS_IUSRS:(OI)(CI)F"
+        icacls "C:\Apps\Logs" /grant "Everyone:(OI)(CI)F"
+
+    - name: Copy application files
+      ansible.windows.win_copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        - { src: "files/web.config", dest: "C:\\Apps\\WebApp\\web.config" }
+        - { src: "files/default.aspx", dest: "C:\\Apps\\WebApp\\default.aspx" }
+      when: copy_app_files | default(false)
+
+    - name: Create log rotation script
+      ansible.windows.win_copy:
+        content: |
+          $logPath = "C:\Apps\Logs"
+          $maxAge = (Get-Date).AddDays(-30)
+          Get-ChildItem $logPath -Recurse | Where-Object { $_.LastWriteTime -lt $maxAge } | Remove-Item -Force
+        dest: "C:\\Scripts\\LogRotation.ps1"
+
+    - name: Schedule log rotation task
+      ansible.windows.win_shell: |
+        schtasks /create /tn "LogRotation" /tr "powershell.exe -File C:\Scripts\LogRotation.ps1" /sc daily /st 02:00 /f
