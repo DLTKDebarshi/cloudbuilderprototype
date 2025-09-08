@@ -10,7 +10,7 @@ terraform {
   
   backend "s3" {
     bucket = "cloudbuilderprototype-tfstate-prod"
-    key    = "terraform.tfstate"
+    key    = "vantagpoint.terraform.tfstate"
     region = var.aws_region
   }
 }
