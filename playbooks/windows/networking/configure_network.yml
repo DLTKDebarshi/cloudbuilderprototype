@@ -1,0 +1,64 @@
+---
+- name: Windows Networking Configuration
+  hosts: windows
+  gather_facts: false
+  vars:
+    ansible_user: Administrator
+    ansible_password: "{{ windows_password }}"
+    ansible_connection: winrm
+    ansible_winrm_server_cert_validation: ignore
+    ansible_winrm_transport: basic
+    ansible_port: 5985
+
+  tasks:
+    - name: Configure Windows Firewall for HTTP
+      community.windows.win_firewall_rule:
+        name: "HTTP Inbound"
+        localport: 80
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    - name: Configure Windows Firewall for HTTPS
+      community.windows.win_firewall_rule:
+        name: "HTTPS Inbound"
+        localport: 443
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    - name: Configure Windows Firewall for RDP
+      community.windows.win_firewall_rule:
+        name: "RDP Inbound"
+        localport: 3389
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    - name: Configure Windows Firewall for WinRM
+      community.windows.win_firewall_rule:
+        name: "WinRM HTTP"
+        localport: 5985
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    - name: Test HTTP endpoint availability
+      ansible.windows.win_uri:
+        url: "http://localhost"
+        method: GET
+        status_code: [200, 404]
+      register: http_test
+      ignore_errors: true
+
+    - name: Display HTTP test results
+      ansible.builtin.debug:
+        msg: "HTTP endpoint test result: {{ http_test.status_code }}"

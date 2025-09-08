@@ -1,0 +1,50 @@
+---
+- name: AWS Integration for Windows
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  tasks:
+    - name: Retrieve Windows password from AWS
+      amazon.aws.ec2_win_password:
+        instance_id: "{{ windows_instance_id }}"
+        key_file: "{{ private_key_file }}"
+        region: "{{ aws_region | default('us-east-1') }}"
+      register: windows_password_result
+      delegate_to: localhost
+
+    - name: Store Windows password for later use
+      ansible.builtin.set_fact:
+        windows_admin_password: "{{ windows_password_result.win_password }}"
+
+    - name: Display connection information
+      ansible.builtin.debug:
+        msg: 
+          - "Windows Instance ID: {{ windows_instance_id }}"
+          - "Windows Admin Password: {{ windows_admin_password }}"
+          - "Use this password to connect via RDP or WinRM"
+
+- name: Configure Windows instance
+  hosts: windows
+  gather_facts: false
+  vars:
+    ansible_user: Administrator
+    ansible_password: "{{ hostvars['localhost']['windows_admin_password'] }}"
+    ansible_connection: winrm
+    ansible_winrm_server_cert_validation: ignore
+    ansible_winrm_transport: basic
+    ansible_port: 5985
+
+  tasks:
+    - name: Install AWS CLI
+      ansible.windows.win_shell: |
+        Invoke-WebRequest -Uri "https://awscli.amazonaws.com/AWSCLIV2.msi" -OutFile "C:\Temp\AWSCLIV2.msi"
+        Start-Process msiexec.exe -Wait -ArgumentList '/I C:\Temp\AWSCLIV2.msi /quiet'
+
+    - name: Configure AWS credentials
+      ansible.windows.win_shell: |
+        aws configure set aws_access_key_id "{{ aws_access_key }}"
+        aws configure set aws_secret_access_key "{{ aws_secret_key }}"
+        aws configure set default.region "{{ aws_region | default('us-east-1') }}"
+      when: aws_access_key is defined and aws_secret_key is defined
