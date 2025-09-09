@@ -80,7 +80,7 @@ jobs:
       run: dotnet publish app/dotnet-hello-world/${{ env.APP_NAME }}.csproj --configuration Release --output ./publish --no-build
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dotnet-app
         path: ./publish

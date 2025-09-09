@@ -146,10 +146,21 @@ jobs:
 
     - name: Debug - Show Variables
       run: |
-        echo "=== Terraform console test ==="
-        echo 'var.vpcs' | terraform console || true
-        echo 'var.internet_gateways' | terraform console || true
-        echo 'var.subnets' | terraform console || true
+        echo "=== Terraform console test for ${{ inputs.terraform_stage }} ==="
+        if [[ "${{ inputs.terraform_stage }}" == "stage1-networking" ]]; then
+          echo 'var.vpcs' | terraform console || true
+          echo 'var.internet_gateways' | terraform console || true
+          echo 'var.subnets' | terraform console || true
+          echo 'var.route_tables' | terraform console || true
+        elif [[ "${{ inputs.terraform_stage }}" == "stage2-networking-services" ]]; then
+          echo 'var.elastic_ips' | terraform console || true
+          echo 'var.nat_gateways' | terraform console || true
+        elif [[ "${{ inputs.terraform_stage }}" == "stage3-security" ]]; then
+          echo 'var.security_groups' | terraform console || true
+        elif [[ "${{ inputs.terraform_stage }}" == "stage4-compute" ]]; then
+          echo 'var.instances' | terraform console || true
+          echo 'var.username' | terraform console || true
+        fi
 
     - name: Terraform Plan
       id: plan
