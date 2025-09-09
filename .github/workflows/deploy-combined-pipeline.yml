@@ -206,7 +206,7 @@ jobs:
   deployment-summary:
     name: 'Deployment Summary'
     runs-on: ubuntu-latest
-    needs: [get-infrastructure-info, deploy-stage1, validate-stage1, deploy-stage2, validate-stage2, deploy-stage3, validate-stage3, deploy-stage4, validate-stage4, configure-ansible, deploy-dotnet-app, test-web-application]
+    needs: [get-infrastructure-info, deploy-networking, deploy-networking-services, deploy-security, deploy-compute, validate-infrastructure, deploy-ansible, deploy-dotnet-app, test-web-application]
     if: always()
     steps:
     - name: Deployment Results
