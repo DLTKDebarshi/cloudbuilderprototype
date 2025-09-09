@@ -70,6 +70,13 @@ security_groups = {
         protocol    = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
         description = "RDP access"
+      },
+      {
+        from_port   = 5985
+        to_port     = 5986
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+        description = "WinRM access"
       }
     ]
 

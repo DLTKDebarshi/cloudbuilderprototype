@@ -55,16 +55,65 @@ if ($username -and $password) {
     Write-Output "Please ensure USERNAME and PASSWORD secrets are configured in GitHub"
 }
 
+# Disable Windows Firewall completely for initial setup
+Write-Output "Disabling Windows Firewall for remote access..."
+try {
+    Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+    Write-Output "Windows Firewall disabled successfully"
+}
+catch {
+    Write-Output "Error disabling Windows Firewall: $($_.Exception.Message)"
+}
+
+# Enable RDP
+Write-Output "Enabling RDP..."
+try {
+    Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+    Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue
+    Write-Output "RDP enabled successfully"
+}
+catch {
+    Write-Output "Error enabling RDP: $($_.Exception.Message)"
+}
+
 # Enable WinRM for Ansible
 Write-Output "Configuring WinRM for remote management..."
-winrm quickconfig -q
-winrm set winrm/config/service/Auth '@{Basic="true"}'
-winrm set winrm/config/service '@{AllowUnencrypted="true"}'
-winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="512"}'
+try {
+    # Enable PowerShell remoting
+    Enable-PSRemoting -Force -SkipNetworkProfileCheck
+    
+    # Configure WinRM service
+    winrm quickconfig -q -force
+    winrm set winrm/config/service/Auth '@{Basic="true"}'
+    winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+    winrm set winrm/config/service '@{CertificateThumbprint=""}'
+    winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="1024"}'
+    winrm set winrm/config '@{MaxTimeoutms="1800000"}'
+    winrm set winrm/config/client '@{TrustedHosts="*"}'
+    
+    # Create WinRM HTTP listener
+    winrm create winrm/config/Listener?Address=*+Transport=HTTP -ErrorAction SilentlyContinue
+    
+    # Start and configure WinRM service
+    Stop-Service WinRM -Force -ErrorAction SilentlyContinue
+    Start-Service WinRM
+    Set-Service WinRM -StartupType Automatic
+    
+    Write-Output "WinRM service configured successfully"
+}
+catch {
+    Write-Output "Error configuring WinRM: $($_.Exception.Message)"
+}
 
 # Enable firewall rules for WinRM
-New-NetFirewallRule -DisplayName "WinRM HTTP" -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow
-New-NetFirewallRule -DisplayName "WinRM HTTPS" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow
+try {
+    New-NetFirewallRule -DisplayName "WinRM HTTP" -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow -ErrorAction SilentlyContinue
+    New-NetFirewallRule -DisplayName "WinRM HTTPS" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow -ErrorAction SilentlyContinue
+    Write-Output "WinRM firewall rules configured successfully"
+}
+catch {
+    Write-Output "Error configuring WinRM firewall rules: $($_.Exception.Message)"
+}
 
 # Install IIS and management tools
 Write-Output "Installing IIS and required features..."
@@ -153,8 +202,29 @@ $htmlContent = @"
 
 $htmlContent | Out-File -FilePath "C:\inetpub\wwwroot\index.html" -Encoding UTF8
 
+# Final diagnostic check
+Write-Output "=== FINAL CONFIGURATION STATUS ==="
+Write-Output "Windows Firewall Status:"
+Get-NetFirewallProfile | Select-Object Name, Enabled | Format-Table
+
+Write-Output "WinRM Service Status:"
+Get-Service WinRM | Format-Table
+
+Write-Output "WinRM Configuration:"
+winrm enumerate winrm/config/listener
+
+Write-Output "RDP Configuration:"
+Get-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections"
+
+Write-Output "IIS Service Status:"
+Get-Service W3SVC | Format-Table
+
+Write-Output "Network Connections:"
+Get-NetTCPConnection -LocalPort 5985,5986,3389,80,443 -ErrorAction SilentlyContinue | Format-Table
+
 Write-Output "Server configuration completed successfully!"
 Write-Output "IIS is running and ready for application deployment."
+Write-Output "=== END CONFIGURATION STATUS ==="
 
 Stop-Transcript
 </powershell>

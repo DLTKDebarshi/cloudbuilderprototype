@@ -120,13 +120,38 @@ jobs:
         timeout = 60
         EOF
 
+    - name: Wait for Windows instance to fully boot
+      run: |
+        echo "Waiting for Windows instance to complete startup and WinRM configuration..."
+        echo "This may take 5-10 minutes for Windows Server to fully initialize."
+        sleep 300
+        echo "Wait completed. Proceeding with connectivity tests..."
+
     - name: Test WinRM connectivity
       run: |
-        echo "Testing WinRM connectivity to ${{ inputs.windows_host }}:5985..."
-        timeout 10 bash -c "</dev/tcp/${{ inputs.windows_host }}/5985" && echo "✅ Port 5985 is accessible" || echo "❌ Port 5985 is not accessible"
+        echo "Testing WinRM connectivity to ${{ inputs.windows_host }}..."
         
+        # Test port 5985 (HTTP WinRM)
+        for i in {1..5}; do
+          echo "Attempt $i: Testing port 5985..."
+          if timeout 10 bash -c "</dev/tcp/${{ inputs.windows_host }}/5985" 2>/dev/null; then
+            echo "✅ Port 5985 is accessible"
+            PORT_5985_OK=true
+            break
+          else
+            echo "❌ Port 5985 attempt $i failed"
+            sleep 30
+          fi
+        done
+        
+        # Test port 5986 (HTTPS WinRM)  
         echo "Testing WinRM HTTPS connectivity to ${{ inputs.windows_host }}:5986..."
         timeout 10 bash -c "</dev/tcp/${{ inputs.windows_host }}/5986" && echo "✅ Port 5986 is accessible" || echo "❌ Port 5986 is not accessible"
+        
+        if [ "$PORT_5985_OK" != "true" ]; then
+          echo "⚠️ WinRM port 5985 is still not accessible after 5 attempts"
+          echo "The instance may still be booting or WinRM may not be configured properly"
+        fi
       continue-on-error: true
 
     - name: Test Windows connection
