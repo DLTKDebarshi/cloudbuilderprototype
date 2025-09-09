@@ -24,6 +24,12 @@ variable "user_data" {
   default     = null
 }
 
+variable "key_name" {
+  description = "Key name for EC2 instance access"
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags to assign to the instance"
   type        = map(string)

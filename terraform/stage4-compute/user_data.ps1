@@ -57,6 +57,7 @@ if ($username -and $password) {
 # Disable Windows Firewall completely for initial setup
 Write-Output "Disabling Windows Firewall for remote access..."
 try {
+    netsh advfirewall set allprofiles state off
     Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
     Write-Output "Windows Firewall disabled successfully"
 }
@@ -64,15 +65,52 @@ catch {
     Write-Output "Error disabling Windows Firewall: $($_.Exception.Message)"
 }
 
-# Enable RDP
-Write-Output "Enabling RDP..."
+# Enable RDP with comprehensive configuration
+Write-Output "Enabling RDP with comprehensive settings..."
 try {
+    # Enable RDP in registry
     Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
-    Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Value 0
+    
+    # Enable RDP through Windows Features
+    Enable-WindowsOptionalFeature -Online -FeatureName "TelnetClient" -NoRestart -ErrorAction SilentlyContinue
+    
+    # Configure RDP settings
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+    
+    # Enable Remote Desktop firewall rules
+    netsh firewall set service remotedesktop enable
+    netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+    
     Write-Output "RDP enabled successfully"
 }
 catch {
     Write-Output "Error enabling RDP: $($_.Exception.Message)"
+}
+
+# Ensure Administrator account is enabled and configured
+Write-Output "Configuring Administrator account..."
+try {
+    # Enable Administrator account
+    net user Administrator /active:yes
+    
+    # Set password for Administrator if provided
+    if ($username -and $password) {
+        net user $username $password /add /y
+        net localgroup "Administrators" $username /add
+        net localgroup "Remote Desktop Users" $username /add
+        Write-Output "User $username configured successfully"
+    }
+    
+    # Also ensure Administrator has the password
+    if ($password) {
+        net user Administrator $password
+        Write-Output "Administrator password set successfully"
+    }
+}
+catch {
+    Write-Output "Error configuring user accounts: $($_.Exception.Message)"
 }
 
 # Enable WinRM for Ansible
@@ -221,8 +259,30 @@ Get-Service W3SVC | Format-Table
 Write-Output "Network Connections:"
 Get-NetTCPConnection -LocalPort 5985,5986,3389,80,443 -ErrorAction SilentlyContinue | Format-Table
 
+# Write configuration status to Windows Event Log
+try {
+    New-EventLog -LogName Application -Source "CloudBuilderSetup" -ErrorAction SilentlyContinue
+    Write-EventLog -LogName Application -Source "CloudBuilderSetup" -EventId 1001 -EntryType Information -Message "CloudBuilder Windows setup completed successfully. RDP and WinRM should be accessible."
+}
+catch {
+    Write-Output "Could not write to event log: $($_.Exception.Message)"
+}
+
+# Create a simple status file
+$statusInfo = @{
+    "Timestamp" = Get-Date
+    "Username" = $username
+    "RDPEnabled" = (Get-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections").fDenyTSConnections -eq 0
+    "WinRMRunning" = (Get-Service WinRM).Status -eq "Running"
+    "FirewallDisabled" = (Get-NetFirewallProfile | Where-Object {$_.Enabled -eq $true}).Count -eq 0
+    "IISRunning" = (Get-Service W3SVC).Status -eq "Running"
+}
+
+$statusInfo | ConvertTo-Json | Out-File -FilePath "C:\CloudBuilderStatus.json" -Encoding UTF8
+
 Write-Output "Server configuration completed successfully!"
 Write-Output "IIS is running and ready for application deployment."
+Write-Output "Status file created at C:\CloudBuilderStatus.json"
 Write-Output "=== END CONFIGURATION STATUS ==="
 
 Stop-Transcript

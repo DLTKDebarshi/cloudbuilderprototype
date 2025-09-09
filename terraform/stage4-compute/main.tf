@@ -1,5 +1,7 @@
 # Stage 4: Compute Infrastructure - Following your GitHub repository style
 
+# Note: Key pair removed - using password authentication only
+
 # Data sources to get outputs from previous stages
 data "aws_ssm_parameter" "subnet_outputs" {
   for_each = toset(["public_subnet_1a"])
@@ -34,6 +36,8 @@ module "instance" {
       password = var.password
     })
   )
+  
+  key_name = null  # Using password authentication
 
   tags = merge(try(each.value.tags, {}), {
     DeployedBy      = "Debarshi From IAC team"
