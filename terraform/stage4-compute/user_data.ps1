@@ -1,6 +1,5 @@
 <powershell>
 # Windows Server User Data Script
-# Configure the server with username and password from GitHub secrets
 
 # Set execution policy
 Set-ExecutionPolicy Bypass -Scope Process -Force
