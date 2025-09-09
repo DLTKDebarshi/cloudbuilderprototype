@@ -229,10 +229,8 @@ main() {
     validate_stage 3 "Security" || ((total_errors += $?))
     validate_stage 4 "Compute" || ((total_errors += $?))
     
-    # Test web application if all stages passed
-    if [ $total_errors -eq 0 ]; then
-        test_web_application || ((total_errors += $?))
-    fi
+    # Note: Web application testing is done after deployment in the pipeline
+    # Infrastructure validation only validates AWS resources exist
     
     # Generate final report
     generate_report $total_errors
