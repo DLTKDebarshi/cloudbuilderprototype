@@ -116,9 +116,9 @@ validate_stage() {
     case $stage_num in
         1)
             # Stage 1: Networking
-            vpc_id=$(get_ssm_parameter "/terraform/stage1/vpc_id")
-            subnet_id=$(get_ssm_parameter "/terraform/stage1/public_subnet_id")
-            igw_id=$(get_ssm_parameter "/terraform/stage1/internet_gateway_id")
+            vpc_id=$(get_ssm_parameter "/terraform/stage1/vpc/main_vpc/id")
+            subnet_id=$(get_ssm_parameter "/terraform/stage1/subnet/public_subnet_1a/id")
+            igw_id=$(get_ssm_parameter "/terraform/stage1/igw/main_igw/id")
             
             [ -n "$vpc_id" ] && check_resource "VPC" "$vpc_id" "1" || ((errors++))
             [ -n "$subnet_id" ] && check_resource "SUBNET" "$subnet_id" "1" || ((errors++))
@@ -126,21 +126,25 @@ validate_stage() {
             ;;
         2)
             # Stage 2: Networking Services
-            eip_alloc_id=$(get_ssm_parameter "/terraform/stage2/eip_allocation_id")
+            eip_alloc_id=$(get_ssm_parameter "/terraform/stage2/eip/nat_eip_1a/allocation_id")
             
             [ -n "$eip_alloc_id" ] && check_resource "EIP" "$eip_alloc_id" "2" || ((errors++))
             ;;
         3)
             # Stage 3: Security
-            sg_id=$(get_ssm_parameter "/terraform/stage3/security_group_id")
+            web_sg_id=$(get_ssm_parameter "/terraform/stage3/sg/web_sg/id")
+            app_sg_id=$(get_ssm_parameter "/terraform/stage3/sg/app_sg/id")
             
-            [ -n "$sg_id" ] && check_resource "SG" "$sg_id" "3" || ((errors++))
+            [ -n "$web_sg_id" ] && check_resource "SG" "$web_sg_id" "3" || ((errors++))
+            [ -n "$app_sg_id" ] && check_resource "SG" "$app_sg_id" "3" || ((errors++))
             ;;
         4)
             # Stage 4: Compute
-            instance_id=$(get_ssm_parameter "/terraform/stage4/windows_instance_id")
+            web_instance_id=$(get_ssm_parameter "/terraform/stage4/instance/web_server/id")
+            app_instance_id=$(get_ssm_parameter "/terraform/stage4/instance/app_server/id")
             
-            [ -n "$instance_id" ] && check_resource "INSTANCE" "$instance_id" "4" || ((errors++))
+            [ -n "$web_instance_id" ] && check_resource "INSTANCE" "$web_instance_id" "4" || ((errors++))
+            [ -n "$app_instance_id" ] && check_resource "INSTANCE" "$app_instance_id" "4" || ((errors++))
             ;;
     esac
     
