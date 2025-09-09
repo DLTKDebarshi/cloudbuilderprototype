@@ -172,12 +172,14 @@ jobs:
       if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
       run: |
         terraform apply -auto-approve -input=false tfplan
-
+        
     - name: Terraform Output
       id: outputs
       if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
       run: |
         terraform_outputs=$(terraform output -json)
-        echo "terraform_outputs=$terraform_outputs" >> $GITHUB_OUTPUT
+        echo "terraform_outputs<<EOF" >> $GITHUB_OUTPUT
+        echo "$terraform_outputs" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
         echo "Terraform outputs for ${{ inputs.terraform_stage }}:"
-        echo "$terraform_outputs" | jq .
+        terraform output
