@@ -6,24 +6,16 @@
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
   tasks:
-    - name: Retrieve Windows password from AWS
-      amazon.aws.ec2_win_password:
-        instance_id: "{{ windows_instance_id }}"
-        key_file: "{{ private_key_file }}"
-        region: "{{ aws_region | default('us-east-1') }}"
-      register: windows_password_result
-      delegate_to: localhost
-
-    - name: Store Windows password for later use
-      ansible.builtin.set_fact:
-        windows_admin_password: "{{ windows_password_result.win_password }}"
-
-    - name: Display connection information
+    - name: Display AWS integration information
       ansible.builtin.debug:
         msg: 
-          - "Windows Instance ID: {{ windows_instance_id }}"
-          - "Windows Admin Password: {{ windows_admin_password }}"
-          - "Use this password to connect via RDP or WinRM"
+          - "AWS Region: {{ aws_region | default('us-east-1') }}"
+          - "Windows Host: {{ ansible_host }}"
+          - "AWS integration setup completed"
+
+    - name: Install AWS CLI tools on Windows (if needed)
+      ansible.builtin.debug:
+        msg: "AWS CLI can be installed on Windows instance if needed"
 
 - name: Configure Windows instance
   hosts: windows

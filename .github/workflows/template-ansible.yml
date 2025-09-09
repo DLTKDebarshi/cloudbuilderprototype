@@ -63,7 +63,7 @@ jobs:
     - name: Install Ansible
       run: |
         python -m pip install --upgrade pip
-        pip install ansible==${{ env.ANSIBLE_VERSION }}
+        pip install ansible==8.0.0
         pip install pywinrm
         pip install boto3
         pip install botocore
@@ -84,7 +84,14 @@ jobs:
     - name: Create inventory file
       run: |
         echo "[windows]" > inventory.ini
-        echo "${{ inputs.windows_host }} ansible_host=${{ inputs.windows_host }}" >> inventory.ini
+        echo "${{ inputs.windows_host }} ansible_host=${{ inputs.windows_host }} ansible_user=${{ secrets.USERNAME }} ansible_password=${{ secrets.WINDOWS_PASSWORD }} ansible_connection=winrm ansible_winrm_transport=basic ansible_winrm_server_cert_validation=ignore ansible_port=5985" >> inventory.ini
+        
+    - name: Debug inventory file
+      run: |
+        echo "=== Inventory File Content ==="
+        cat inventory.ini | sed 's/ansible_password=[^ ]*/ansible_password=***MASKED***/'
+        echo "=== End Inventory ==="
+        echo "Windows Host: ${{ inputs.windows_host }}"
 
     - name: Create ansible.cfg
       run: |
@@ -93,10 +100,21 @@ jobs:
         host_key_checking = False
         inventory = inventory.ini
         remote_user = ${{ secrets.USERNAME }}
+        timeout = 60
+        deprecation_warnings = False
         
         [inventory]
         enable_plugins = aws_ec2
+        
+        [winrm]
+        timeout = 60
         EOF
+
+    - name: Test Windows connection
+      run: |
+        echo "Testing connection to Windows host..."
+        ansible windows -m win_ping -v
+      continue-on-error: true
 
     - name: Run IIS Configuration Playbook
       if: inputs.playbook == 'all' || inputs.playbook == 'iis_configuration'
