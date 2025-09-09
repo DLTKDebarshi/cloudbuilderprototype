@@ -28,8 +28,6 @@ on:
         required: true
       AWS_SECRET_ACCESS_KEY:
         required: true
-      WINDOWS_PASSWORD:
-        required: true
       USERNAME:
         required: true
       PASSWORD:
@@ -81,10 +79,22 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Debug Windows Password
+      run: |
+        if [ -z "${{ secrets.PASSWORD }}" ]; then
+          echo "❌ ERROR: PASSWORD secret is empty or not set!"
+          echo "Please check that the PASSWORD secret is configured in repository settings."
+          exit 1
+        else
+          echo "✅ PASSWORD secret is configured and will be used for Windows authentication"
+        fi
+
     - name: Create inventory file
       run: |
-        echo "[windows]" > inventory.ini
-        echo "${{ inputs.windows_host }} ansible_host=${{ inputs.windows_host }} ansible_user=${{ secrets.USERNAME }} ansible_password=${{ secrets.WINDOWS_PASSWORD }} ansible_connection=winrm ansible_winrm_transport=basic ansible_winrm_server_cert_validation=ignore ansible_port=5985" >> inventory.ini
+        cat > inventory.ini << EOF
+        [windows]
+        ${{ inputs.windows_host }} ansible_host=${{ inputs.windows_host }} ansible_user="${{ secrets.USERNAME }}" ansible_password="${{ secrets.PASSWORD }}" ansible_connection=winrm ansible_winrm_transport=basic ansible_winrm_server_cert_validation=ignore ansible_port=5985
+        EOF
         
     - name: Debug inventory file
       run: |
@@ -110,9 +120,18 @@ jobs:
         timeout = 60
         EOF
 
+    - name: Test WinRM connectivity
+      run: |
+        echo "Testing WinRM connectivity to ${{ inputs.windows_host }}:5985..."
+        timeout 10 bash -c "</dev/tcp/${{ inputs.windows_host }}/5985" && echo "✅ Port 5985 is accessible" || echo "❌ Port 5985 is not accessible"
+        
+        echo "Testing WinRM HTTPS connectivity to ${{ inputs.windows_host }}:5986..."
+        timeout 10 bash -c "</dev/tcp/${{ inputs.windows_host }}/5986" && echo "✅ Port 5986 is accessible" || echo "❌ Port 5986 is not accessible"
+      continue-on-error: true
+
     - name: Test Windows connection
       run: |
-        echo "Testing connection to Windows host..."
+        echo "Testing Ansible connection to Windows host..."
         ansible windows -m win_ping -v
       continue-on-error: true
 
@@ -120,7 +139,7 @@ jobs:
       if: inputs.playbook == 'all' || inputs.playbook == 'iis_configuration'
       run: |
         ansible-playbook playbooks/windows/iis_configuration/setup_iis.yml \
-          -e windows_password="${{ secrets.WINDOWS_PASSWORD }}" \
+          -e windows_password="${{ secrets.PASSWORD }}" \
           -e username="${{ secrets.USERNAME }}" \
           -e password="${{ secrets.PASSWORD }}" \
           -e app_pool_name="MyAppPool" \
@@ -132,7 +151,7 @@ jobs:
       if: inputs.playbook == 'all' || inputs.playbook == 'system_management'
       run: |
         ansible-playbook playbooks/windows/system_management/configure_system.yml \
-          -e windows_password="${{ secrets.WINDOWS_PASSWORD }}" \
+          -e windows_password="${{ secrets.PASSWORD }}" \
           -e username="${{ secrets.USERNAME }}" \
           -e password="${{ secrets.PASSWORD }}" \
           -v
@@ -141,7 +160,7 @@ jobs:
       if: inputs.playbook == 'all' || inputs.playbook == 'file_management'
       run: |
         ansible-playbook playbooks/windows/file_management/manage_files.yml \
-          -e windows_password="${{ secrets.WINDOWS_PASSWORD }}" \
+          -e windows_password="${{ secrets.PASSWORD }}" \
           -e username="${{ secrets.USERNAME }}" \
           -e password="${{ secrets.PASSWORD }}" \
           -e copy_app_files=true \
@@ -151,7 +170,7 @@ jobs:
       if: inputs.playbook == 'all' || inputs.playbook == 'networking'
       run: |
         ansible-playbook playbooks/windows/networking/configure_network.yml \
-          -e windows_password="${{ secrets.WINDOWS_PASSWORD }}" \
+          -e windows_password="${{ secrets.PASSWORD }}" \
           -e username="${{ secrets.USERNAME }}" \
           -e password="${{ secrets.PASSWORD }}" \
           -v
@@ -160,7 +179,7 @@ jobs:
       if: inputs.playbook == 'all' || inputs.playbook == 'aws_integration'
       run: |
         ansible-playbook playbooks/windows/aws_integration/aws_setup.yml \
-          -e windows_password="${{ secrets.WINDOWS_PASSWORD }}" \
+          -e windows_password="${{ secrets.PASSWORD }}" \
           -e username="${{ secrets.USERNAME }}" \
           -e password="${{ secrets.PASSWORD }}" \
           -e aws_access_key="${{ secrets.AWS_ACCESS_KEY_ID }}" \
