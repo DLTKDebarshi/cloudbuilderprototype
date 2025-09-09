@@ -27,17 +27,18 @@ module "instance" {
   subnet_id          = data.aws_ssm_parameter.subnet_outputs[each.value.subnet_key].value
   security_group_ids = [data.aws_ssm_parameter.security_group_outputs[each.value.security_group_key].value]
 
-  user_data = try(each.value.user_data, templatefile("${path.module}/user_data.ps1", {
-    username = var.username
-    password = var.password
-  }))
+  user_data = coalesce(
+    try(each.value.user_data, null),
+    templatefile("${path.module}/user_data.ps1", {
+      username = var.username
+      password = var.password
+    })
+  )
 
   tags = merge(try(each.value.tags, {}), {
-    DeployedBy = "Debarshi From IAC team"
+    DeployedBy      = "Debarshi From IAC team"
     UserDataVersion = "v2.0-improved-winrm-rdp"
   })
-
-
 }
 
 # Associate Elastic IP with instances if specified

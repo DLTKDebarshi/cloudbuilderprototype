@@ -19,10 +19,12 @@ variable "username" {
   description = "Username from GitHub secrets"
   type        = string
   sensitive   = true
+  default     = "azureadmin"
 }
 
 variable "password" {
   description = "Password from GitHub secrets"
   type        = string
   sensitive   = true
+  default     = "`5q;7eRH9&0#s$9D.£V+"
 }
