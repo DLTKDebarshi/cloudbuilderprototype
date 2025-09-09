@@ -34,7 +34,10 @@ module "instance" {
 
   tags = merge(try(each.value.tags, {}), {
     DeployedBy = "Debarshi From IAC team"
+    UserDataVersion = "v2.0-improved-winrm-rdp"
   })
+
+
 }
 
 # Associate Elastic IP with instances if specified

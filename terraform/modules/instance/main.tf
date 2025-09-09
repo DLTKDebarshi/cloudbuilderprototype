@@ -21,4 +21,9 @@ resource "aws_instance" "this" {
   tags = merge(var.tags, {
     Name = var.name
   })
+
+  # Force recreation when user data changes
+  lifecycle {
+    replace_triggered_by = [var.user_data]
+  }
 }
