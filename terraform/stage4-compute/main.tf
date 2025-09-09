@@ -59,3 +59,15 @@ resource "aws_ssm_parameter" "instance_outputs" {
     Stage      = "compute"
   }
 }
+
+resource "aws_ssm_parameter" "instance_public_ip_outputs" {
+  for_each = module.instance
+
+  name  = "/terraform/stage4/instance/${each.key}/public_ip"
+  type  = "String"
+  value = each.value.public_ip
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "compute"
+  }
+}

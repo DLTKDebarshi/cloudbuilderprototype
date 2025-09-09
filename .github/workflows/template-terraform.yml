@@ -17,11 +17,7 @@ on:
         required: false
         type: string
         default: 'us-east-1'
-      environment:
-        description: 'Target environment'
-        required: false
-        type: string
-        default: 'staging'
+
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -47,7 +43,6 @@ jobs:
   terraform:
     name: 'Deploy Terraform Stage'
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     outputs:
       terraform_outputs: ${{ steps.outputs.outputs.terraform_outputs }}
 

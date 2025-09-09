@@ -3,11 +3,7 @@ name: Reusable Ansible Configuration
 on:
   workflow_call:
     inputs:
-      environment:
-        description: 'Target environment'
-        required: false
-        type: string
-        default: 'staging'
+
       playbook:
         description: 'Playbook to run'
         required: false

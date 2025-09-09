@@ -3,11 +3,7 @@ name: Reusable .NET Application Deployment
 on:
   workflow_call:
     inputs:
-      environment:
-        description: 'Target environment'
-        required: false
-        type: string
-        default: 'staging'
+
       windows_host:
         description: 'Windows host IP address'
         required: true
