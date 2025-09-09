@@ -11,10 +11,11 @@ data "aws_ssm_parameter" "security_group_outputs" {
   name     = "/terraform/stage3/sg/${each.key}/id"
 }
 
-data "aws_ssm_parameter" "elastic_ip_outputs" {
-  for_each = toset(["nat_eip_1a"])
-  name     = "/terraform/stage2/eip/${each.key}/allocation_id"
-}
+# Temporarily commented out - not needed without EIP association
+# data "aws_ssm_parameter" "elastic_ip_outputs" {
+#   for_each = toset(["nat_eip_1a", "web_server_eip"])
+#   name     = "/terraform/stage2/eip/${each.key}/allocation_id"
+# }
 
 # Module calls using for_each pattern with try() function
 module "instance" {
@@ -37,15 +38,17 @@ module "instance" {
 }
 
 # Associate Elastic IP with instances if specified
-resource "aws_eip_association" "instance_eip_assoc" {
-  for_each = {
-    for k, v in try(var.instances, {}) : k => v
-    if try(v.associate_eip, false)
-  }
+# Temporarily commented out due to permission issues with EIP association
+# The instances will get public IPs from the public subnet instead
+# resource "aws_eip_association" "instance_eip_assoc" {
+#   for_each = {
+#     for k, v in try(var.instances, {}) : k => v
+#     if try(v.associate_eip, false)
+#   }
 
-  instance_id   = module.instance[each.key].id
-  allocation_id = data.aws_ssm_parameter.elastic_ip_outputs[each.value.eip_key].value
-}
+#   instance_id   = module.instance[each.key].id
+#   allocation_id = data.aws_ssm_parameter.elastic_ip_outputs[each.value.eip_key].value
+# }
 
 # Store instance information for other stages and validation
 resource "aws_ssm_parameter" "instance_outputs" {

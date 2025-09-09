@@ -6,6 +6,11 @@ elastic_ips = {
       Name = "cloudbuilder-nat-eip-1a"
     }
   }
+  web_server_eip = {
+    tags = {
+      Name = "cloudbuilder-web-server-eip"
+    }
+  }
 }
 
 nat_gateways = {
