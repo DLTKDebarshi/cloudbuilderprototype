@@ -131,17 +131,40 @@ jobs:
       id: validate
       run: terraform validate -no-color
 
+    - name: Debug - Check terraform.tfvars
+      run: |
+        echo "=== Current directory ==="
+        pwd
+        echo "=== Files in current directory ==="
+        ls -la
+        echo "=== Content of terraform.tfvars ==="
+        if [ -f terraform.tfvars ]; then
+          cat terraform.tfvars
+        else
+          echo "terraform.tfvars not found!"
+        fi
+
+    - name: Debug - Show Variables
+      run: |
+        echo "=== Terraform console test ==="
+        echo 'var.vpcs' | terraform console || true
+        echo 'var.internet_gateways' | terraform console || true
+        echo 'var.subnets' | terraform console || true
+
     - name: Terraform Plan
       id: plan
       run: |
         # Only pass variables that exist in the specific stage
         if [[ "${{ inputs.terraform_stage }}" == "stage4-compute" ]]; then
           terraform plan -no-color -input=false \
+            -var-file="terraform.tfvars" \
             -var="username=${{ secrets.USERNAME }}" \
             -var="password=${{ secrets.PASSWORD }}" \
             -out=tfplan
         else
-          terraform plan -no-color -input=false -out=tfplan
+          terraform plan -no-color -input=false \
+            -var-file="terraform.tfvars" \
+            -out=tfplan
         fi
       continue-on-error: true
 
