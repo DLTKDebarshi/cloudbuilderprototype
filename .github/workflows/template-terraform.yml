@@ -1,0 +1,161 @@
+name: Reusable Terraform Deployment
+
+on:
+  workflow_call:
+    inputs:
+      terraform_stage:
+        description: 'Terraform stage to deploy (stage1-networking, stage2-networking-services, stage3-security, stage4-compute)'
+        required: true
+        type: string
+      terraform_version:
+        description: 'Terraform version to use'
+        required: false
+        type: string
+        default: '1.5.0'
+      aws_region:
+        description: 'AWS region to deploy to'
+        required: false
+        type: string
+        default: 'us-east-1'
+      environment:
+        description: 'Target environment'
+        required: false
+        type: string
+        default: 'staging'
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      TF_STATE_BUCKET:
+        required: true
+      USERNAME:
+        required: true
+      PASSWORD:
+        required: true
+    outputs:
+      terraform_outputs:
+        description: "Terraform outputs as JSON"
+        value: ${{ jobs.terraform.outputs.terraform_outputs }}
+
+env:
+  TF_VERSION: ${{ inputs.terraform_version }}
+  AWS_REGION: ${{ inputs.aws_region }}
+  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+
+jobs:
+  terraform:
+    name: 'Deploy Terraform Stage'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      terraform_outputs: ${{ steps.outputs.outputs.terraform_outputs }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./terraform/${{ inputs.terraform_stage }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+        terraform_wrapper: false
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Ensure Terraform State S3 Bucket
+      id: ensure_state_bucket
+      run: |
+        set -euo pipefail
+        BUCKET="${TF_STATE_BUCKET}"
+        REGION="${AWS_REGION}"
+
+        echo "Checking if S3 bucket '${BUCKET}' exists..."
+        if aws s3api head-bucket --bucket "${BUCKET}" 2>/dev/null; then
+          echo "Bucket '${BUCKET}' already exists. Skipping creation."
+        else
+          echo "Bucket '${BUCKET}' not found. Creating..."
+          # us-east-1 creation syntax differs (no LocationConstraint)
+            if [ "${REGION}" = "us-east-1" ]; then
+              aws s3api create-bucket --bucket "${BUCKET}"
+            else
+              aws s3api create-bucket --bucket "${BUCKET}" --create-bucket-configuration LocationConstraint="${REGION}"
+            fi
+
+          echo "Enabling versioning..."
+          aws s3api put-bucket-versioning \
+            --bucket "${BUCKET}" \
+            --versioning-configuration Status=Enabled
+
+          echo "Applying default encryption (AES256)..."
+          aws s3api put-bucket-encryption \
+            --bucket "${BUCKET}" \
+            --server-side-encryption-configuration '{
+              "Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]
+            }'
+
+          echo "Blocking all public access..."
+          aws s3api put-public-access-block \
+            --bucket "${BUCKET}" \
+            --public-access-block-configuration '{
+              "BlockPublicAcls": true,
+              "IgnorePublicAcls": true,
+              "BlockPublicPolicy": true,
+              "RestrictPublicBuckets": true
+            }'
+
+          echo "S3 bucket '${BUCKET}' created and secured."
+        fi
+
+        echo "State bucket step complete."
+
+    - name: Terraform Format
+      id: fmt
+      run: terraform fmt -check -recursive
+      continue-on-error: true
+
+    - name: Terraform Init
+      id: init
+      run: |
+        terraform init \
+          -backend-config="bucket=${TF_STATE_BUCKET}" \
+          -backend-config="key=${{ inputs.terraform_stage }}/terraform.tfstate" \
+          -backend-config="region=${AWS_REGION}"
+
+    - name: Terraform Validate
+      id: validate
+      run: terraform validate -no-color
+
+    - name: Terraform Plan
+      id: plan
+      run: |
+        terraform plan -no-color -input=false \
+          -var="username=${{ secrets.USERNAME }}" \
+          -var="password=${{ secrets.PASSWORD }}" \
+          -var="aws_region=${{ env.AWS_REGION }}" \
+          -out=tfplan
+      continue-on-error: true
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+      run: |
+        terraform apply -auto-approve -input=false tfplan
+
+    - name: Terraform Output
+      id: outputs
+      if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+      run: |
+        terraform_outputs=$(terraform output -json)
+        echo "terraform_outputs=$terraform_outputs" >> $GITHUB_OUTPUT
+        echo "Terraform outputs for ${{ inputs.terraform_stage }}:"
+        echo "$terraform_outputs" | jq .

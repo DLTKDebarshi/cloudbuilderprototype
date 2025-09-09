@@ -1,19 +1,16 @@
 # EC2 Instance Module
 resource "aws_instance" "main" {
-  ami                    = var.ami_id
-  instance_type          = var.instance_type
-  key_name               = var.key_name
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  # Removed key_name dependency - using username/password authentication
   vpc_security_group_ids = var.security_group_ids
   subnet_id              = var.subnet_id
 
   user_data = var.user_data
 
-  tags = merge(
-    {
-      Name = var.instance_name
-    },
-    var.tags
-  )
+  tags = merge(var.tags, {
+    Name = var.instance_name
+  })
 }
 
 output "instance_id" {

@@ -9,10 +9,7 @@ variable "instance_type" {
   default     = "t3.micro"
 }
 
-variable "key_name" {
-  description = "The key name to use for the instance"
-  type        = string
-}
+# Removed key_name variable - using username/password authentication instead
 
 variable "security_group_ids" {
   description = "A list of security group IDs to associate with"

@@ -4,9 +4,10 @@ variable "instance_type" {
   default     = "t3.medium"
 }
 
-variable "key_name" {
-  description = "The key name to use for the instance"
+variable "ami_id" {
+  description = "AMI ID to use for the instance (optional - will use latest Windows 2019 if not provided)"
   type        = string
+  default     = null
 }
 
 variable "security_group_ids" {
@@ -26,9 +27,9 @@ variable "instance_name" {
 }
 
 variable "user_data" {
-  description = "The user data to provide when launching the instance"
+  description = "The user data to provide when launching the instance (optional)"
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "tags" {

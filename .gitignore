@@ -1,0 +1,50 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+terraform.tfplan
+terraform.tfvars
+*.auto.tfvars
+
+# Ansible
+*.retry
+
+# Logs
+*.log
+
+# Build artifacts
+bin/
+obj/
+publish/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+/tmp/
+temp/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Node modules (if any)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Application artifacts
+app-deployment.zip
