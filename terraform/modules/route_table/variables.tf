@@ -8,15 +8,7 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "routes" {
-  description = "List of routes"
-  type = list(object({
-    cidr_block  = string
-    gateway_id  = string
-    gateway_key = optional(string)
-  }))
-  default = []
-}
+# Routes will be managed separately to keep module simple
 
 variable "tags" {
   description = "Tags to assign to the route table"

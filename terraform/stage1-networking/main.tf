@@ -45,12 +45,18 @@ module "route_tables" {
 
   name   = each.key
   vpc_id = module.vpc[each.value.vpc_key].id
-  routes = try(each.value.routes, [])
   tags = merge(try(each.value.tags, {}), {
     DeployedBy = "Debarshi From IAC team"
   })
+}
 
-  depends_on = [module.internet_gateway]
+# Create routes separately for simplicity
+resource "aws_route" "internet_gateway_routes" {
+  for_each = try(var.route_tables, {})
+
+  route_table_id         = module.route_tables[each.key].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = module.internet_gateway[each.value.igw_key].id
 }
 
 # Store outputs in SSM for other stages to use

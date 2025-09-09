@@ -1,16 +1,16 @@
-# Stage 2 Networking Services Outputs
+# Stage 2 Networking Services Outputs - Following your GitHub repository style
 
-output "eip_allocation_id" {
-  description = "Elastic IP allocation ID"
-  value       = module.elastic_ip.eip_allocation_id
+output "elastic_ip_allocation_ids" {
+  description = "Elastic IP allocation IDs"
+  value       = { for k, v in module.elastic_ip : k => v.allocation_id }
 }
 
-output "eip_public_ip" {
-  description = "Elastic IP public IP address"
-  value       = module.elastic_ip.eip_public_ip
+output "elastic_ip_public_ips" {
+  description = "Elastic IP public IP addresses"
+  value       = { for k, v in module.elastic_ip : k => v.public_ip }
 }
 
-output "eip_association_id" {
-  description = "Elastic IP association ID (if associated with an instance)"
-  value       = try(module.elastic_ip.eip_association_id, null)
+output "nat_gateway_ids" {
+  description = "NAT Gateway IDs"
+  value       = { for k, v in module.nat_gateway : k => v.id }
 }

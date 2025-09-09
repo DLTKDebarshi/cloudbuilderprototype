@@ -25,12 +25,12 @@ module "instance" {
   instance_type      = each.value.instance_type
   subnet_id          = data.aws_ssm_parameter.subnet_outputs[each.value.subnet_key].value
   security_group_ids = [data.aws_ssm_parameter.security_group_outputs[each.value.security_group_key].value]
-  
+
   user_data = try(each.value.user_data, templatefile("${path.module}/user_data.ps1", {
     username = var.username
     password = var.password
   }))
-  
+
   tags = merge(try(each.value.tags, {}), {
     DeployedBy = "Debarshi From IAC team"
   })
@@ -44,40 +44,18 @@ resource "aws_eip_association" "instance_eip_assoc" {
   }
 
   instance_id   = module.instance[each.key].id
-  allocation_id = local.eip_allocation_id
+  allocation_id = data.aws_ssm_parameter.elastic_ip_outputs[each.value.eip_key].value
 }
 
 # Store instance information for other stages and validation
-resource "aws_ssm_parameter" "instance_ids" {
-  for_each = var.instances
+resource "aws_ssm_parameter" "instance_outputs" {
+  for_each = module.instance
 
-  name  = "/terraform/stage4/${each.key}_instance_id"
+  name  = "/terraform/stage4/instance/${each.key}/id"
   type  = "String"
-  value = module.compute_instances[each.key].instance_id
-  tags  = local.common_tags
-}
-
-# Get the actual EIP public IP after association
-data "aws_eip" "instance_eip" {
-  id = local.eip_allocation_id
-}
-
-resource "aws_ssm_parameter" "instance_public_ips" {
-  for_each = var.instances
-
-  name  = "/terraform/stage4/${each.key}_public_ip"
-  type  = "String"
-  value = data.aws_eip.instance_eip.public_ip
-  tags  = local.common_tags
-
-  depends_on = [aws_eip_association.instance_eip_assoc]
-}
-
-resource "aws_ssm_parameter" "instance_private_ips" {
-  for_each = var.instances
-
-  name  = "/terraform/stage4/${each.key}_private_ip"
-  type  = "String"
-  value = module.compute_instances[each.key].instance_private_ip
-  tags  = local.common_tags
+  value = each.value.id
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "compute"
+  }
 }

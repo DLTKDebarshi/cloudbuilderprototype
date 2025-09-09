@@ -18,12 +18,12 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region = "us-east-1"
 
   default_tags {
     tags = {
-      Project     = var.project_name
-      Environment = var.environment
+      Project     = "CloudBuilder"
+      Environment = "dev"
       ManagedBy   = "Terraform"
       Stage       = "compute"
     }

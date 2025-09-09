@@ -14,10 +14,10 @@ module "security_group" {
   name        = each.key
   description = each.value.description
   vpc_id      = data.aws_ssm_parameter.vpc_outputs[each.value.vpc_key].value
-  
+
   ingress_rules = try(each.value.ingress_rules, [])
   egress_rules  = try(each.value.egress_rules, [])
-  
+
   tags = merge(try(each.value.tags, {}), {
     DeployedBy = "Debarshi From IAC team"
   })
@@ -36,12 +36,4 @@ resource "aws_ssm_parameter" "security_group_outputs" {
   }
 }
 
-# Legacy security group ID (keep for backward compatibility)
-resource "aws_ssm_parameter" "legacy_security_group_id" {
-  count = length(var.security_groups) == 0 ? 1 : 0
-
-  name  = "/terraform/stage3/security_group_id"
-  type  = "String"
-  value = module.legacy_security_group[0].security_group_id
-  tags  = local.common_tags
-}
+# End of stage3-security configuration

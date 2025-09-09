@@ -1,26 +1,22 @@
-# Stage 1 Networking Outputs
+# Stage 1 Networking Outputs - Following your GitHub repository style
 
-output "vpc_id" {
-  description = "VPC ID"
-  value       = module.vpc.vpc_id
+# Output VPC information
+output "vpc_ids" {
+  description = "VPC IDs"
+  value       = { for k, v in module.vpc : k => v.id }
 }
 
-output "public_subnet_id" {
-  description = "Public subnet ID"
-  value       = module.public_subnet.subnet_id
+output "subnet_ids" {
+  description = "Subnet IDs"
+  value       = { for k, v in module.subnets : k => v.id }
 }
 
-output "internet_gateway_id" {
-  description = "Internet Gateway ID"
-  value       = module.internet_gateway.igw_id
+output "internet_gateway_ids" {
+  description = "Internet Gateway IDs"
+  value       = { for k, v in module.internet_gateway : k => v.id }
 }
 
-output "vpc_cidr_block" {
-  description = "VPC CIDR block"
-  value       = module.vpc.vpc_cidr_block
-}
-
-output "availability_zone" {
-  description = "Availability zone used"
-  value       = module.public_subnet.availability_zone
+output "route_table_ids" {
+  description = "Route Table IDs"
+  value       = { for k, v in module.route_tables : k => v.id }
 }
