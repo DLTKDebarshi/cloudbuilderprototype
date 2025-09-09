@@ -33,8 +33,6 @@ on:
         required: true
       AWS_SECRET_ACCESS_KEY:
         required: true
-      WINDOWS_PASSWORD:
-        required: true
       USERNAME:
         required: true
       PASSWORD:
@@ -147,7 +145,7 @@ jobs:
           gather_facts: false
           vars:
             ansible_user: "${{ secrets.USERNAME }}"
-            ansible_password: "${{ secrets.WINDOWS_PASSWORD }}"
+            ansible_password: "${{ secrets.PASSWORD }}"
             ansible_connection: winrm
             ansible_winrm_server_cert_validation: ignore
             ansible_winrm_transport: basic
