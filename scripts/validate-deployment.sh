@@ -163,7 +163,7 @@ validate_stage() {
 test_web_application() {
     echo -e "\n${BLUE}🌐 Testing Web Application${NC}"
     
-    local public_ip=$(get_ssm_parameter "/terraform/stage4/windows_public_ip")
+    local public_ip=$(get_ssm_parameter "/terraform/stage4/instance/web_server/public_ip")
     
     if [ -z "$public_ip" ]; then
         echo -e "${RED}❌ Could not retrieve public IP from SSM${NC}"
