@@ -9,8 +9,3 @@ output "security_group_name" {
   description = "Security group name"
   value       = module.security_group.security_group_name
 }
-
-output "security_group_arn" {
-  description = "Security group ARN"
-  value       = module.security_group.security_group_arn
-}
