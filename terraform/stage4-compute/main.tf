@@ -7,7 +7,7 @@ data "aws_ssm_parameter" "subnet_outputs" {
 }
 
 data "aws_ssm_parameter" "security_group_outputs" {
-  for_each = toset(["web_sg"])
+  for_each = toset(["web_sg", "app_sg"])
   name     = "/terraform/stage3/sg/${each.key}/id"
 }
 
