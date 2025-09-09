@@ -1,31 +1,47 @@
-# Stage 3: Security Infrastructure
-# Security Groups
+# Stage 3: Security Infrastructure - Following your GitHub repository style
 
-# Get VPC ID from Stage 1
-data "aws_ssm_parameter" "vpc_id" {
-  name = "/terraform/stage1/vpc_id"
+# Data sources to get outputs from stage1
+data "aws_ssm_parameter" "vpc_outputs" {
+  for_each = toset(["main_vpc"])
+  name     = "/terraform/stage1/vpc/${each.key}/id"
 }
 
-locals {
-  vpc_id = data.aws_ssm_parameter.vpc_id.value
-}
-
-# Security Group Module
+# Module calls using for_each pattern with try() function
 module "security_group" {
-  source = "../modules/security/security_group"
+  source   = "../modules/security_group"
+  for_each = try(var.security_groups, {})
+
+  name        = each.key
+  description = each.value.description
+  vpc_id      = data.aws_ssm_parameter.vpc_outputs[each.value.vpc_key].value
   
-  security_group_name = var.security_group_name
-  description         = var.security_group_description
-  vpc_id              = local.vpc_id
-  ingress_rules       = var.security_group_ingress_rules
-  egress_rules        = var.security_group_egress_rules
-  tags                = var.common_tags
+  ingress_rules = try(each.value.ingress_rules, [])
+  egress_rules  = try(each.value.egress_rules, [])
+  
+  tags = merge(try(each.value.tags, {}), {
+    DeployedBy = "Debarshi From IAC team"
+  })
 }
 
-# Store security group ID for Stage 4 to use
-resource "aws_ssm_parameter" "security_group_id" {
+# Store outputs in SSM for other stages to use
+resource "aws_ssm_parameter" "security_group_outputs" {
+  for_each = module.security_group
+
+  name  = "/terraform/stage3/sg/${each.key}/id"
+  type  = "String"
+  value = each.value.id
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "security"
+  }
+}
+
+# Legacy security group ID (keep for backward compatibility)
+resource "aws_ssm_parameter" "legacy_security_group_id" {
+  count = length(var.security_groups) == 0 ? 1 : 0
+
   name  = "/terraform/stage3/security_group_id"
   type  = "String"
-  value = module.security_group.security_group_id
-  tags  = var.common_tags
+  value = module.legacy_security_group[0].security_group_id
+  tags  = local.common_tags
 }

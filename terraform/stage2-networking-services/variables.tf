@@ -1,33 +1,17 @@
-# Stage 2 Networking Services Variables
+# Stage 2 Networking Services Variables - Following your GitHub repository style
 
-# General Variables
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
+# Simple variables with default = {} pattern
+variable "nat_gateways" {
+  default = {}
 }
 
-variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "dev"
+variable "elastic_ips" {
+  default = {}
 }
 
-variable "project_name" {
-  description = "Project name"
-  type        = string
-  default     = "cloudbuilder-prototype"
+variable "route_table_associations" {
+  default = {}
 }
-
-variable "username" {
-  description = "Username from GitHub secrets"
-  type        = string
-  sensitive   = true
-}
-
-variable "password" {
-  description = "Password from GitHub secrets"
-  type        = string
   sensitive   = true
 }
 

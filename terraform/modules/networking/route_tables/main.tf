@@ -1,4 +1,3 @@
-# Route Tables Module
 resource "aws_route_table" "public" {
   vpc_id = var.vpc_id
 
@@ -7,17 +6,15 @@ resource "aws_route_table" "public" {
     gateway_id = var.internet_gateway_id
   }
 
-  tags = merge(
-    {
-      Name = var.route_table_name
-    },
-    var.tags
-  )
+  tags = merge(var.tags, {
+    Name = var.route_table_name
+  })
 }
 
 resource "aws_route_table_association" "public" {
-  count          = length(var.subnet_ids)
-  subnet_id      = var.subnet_ids[count.index]
+  for_each = toset(var.subnet_ids)
+
+  subnet_id      = each.value
   route_table_id = aws_route_table.public.id
 }
 

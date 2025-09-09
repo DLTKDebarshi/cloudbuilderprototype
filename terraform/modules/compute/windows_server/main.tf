@@ -15,21 +15,16 @@ data "aws_ami" "windows" {
 }
 
 resource "aws_instance" "windows" {
-  ami                    = data.aws_ami.windows.id
+  ami                    = try(var.ami_id, data.aws_ami.windows.id)
   instance_type          = var.instance_type
-  key_name               = var.key_name
   vpc_security_group_ids = var.security_group_ids
   subnet_id              = var.subnet_id
-  
-  user_data = var.user_data
+  user_data              = try(var.user_data, null)
 
-  tags = merge(
-    {
-      Name = var.instance_name
-      OS   = "Windows"
-    },
-    var.tags
-  )
+  tags = merge(var.tags, {
+    Name = var.instance_name
+    OS   = "Windows"
+  })
 }
 
 output "instance_id" {

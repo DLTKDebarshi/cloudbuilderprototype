@@ -1,47 +1,60 @@
-# Stage 2: Networking Services
-# Elastic IP and other networking services
+# Stage 2: Networking Services - Following your GitHub repository style
 
-# Get VPC ID and subnet ID from Stage 1
-data "aws_ssm_parameter" "vpc_id" {
-  name = "/terraform/stage1/vpc_id"
+# Data sources to get outputs from stage1
+data "aws_ssm_parameter" "vpc_outputs" {
+  for_each = toset(["main_vpc"])
+  name     = "/terraform/stage1/vpc/${each.key}/id"
 }
 
-data "aws_ssm_parameter" "public_subnet_id" {
-  name = "/terraform/stage1/public_subnet_id"
+data "aws_ssm_parameter" "subnet_outputs" {
+  for_each = toset(["public_subnet_1a", "public_subnet_1b"])
+  name     = "/terraform/stage1/subnet/${each.key}/id"
 }
 
-data "aws_ssm_parameter" "internet_gateway_id" {
-  name = "/terraform/stage1/internet_gateway_id"
-}
-
-locals {
-  vpc_id               = data.aws_ssm_parameter.vpc_id.value
-  public_subnet_id     = data.aws_ssm_parameter.public_subnet_id.value
-  internet_gateway_id  = data.aws_ssm_parameter.internet_gateway_id.value
-}
-
-# Elastic IP Module - Create EIP without instance association initially
+# Module calls using for_each pattern with try() function
 module "elastic_ip" {
-  source = "../modules/networking_services/elastic_public_ip"
-  
-  # Don't associate with instance during initial deployment
-  instance_id           = null
-  eip_name              = var.eip_name
-  internet_gateway_id   = local.internet_gateway_id
-  tags                  = var.common_tags
+  source   = "../modules/elastic_ip"
+  for_each = try(var.elastic_ips, {})
+
+  name = each.key
+  tags = merge(try(each.value.tags, {}), {
+    DeployedBy = "Debarshi From IAC team"
+  })
 }
 
-# Store EIP allocation ID for Stage 4 to use
-resource "aws_ssm_parameter" "eip_allocation_id" {
-  name  = "/terraform/stage2/eip_allocation_id"
-  type  = "String"
-  value = module.elastic_ip.eip_allocation_id
-  tags  = var.common_tags
+module "nat_gateway" {
+  source   = "../modules/nat_gateway"
+  for_each = try(var.nat_gateways, {})
+
+  name          = each.key
+  subnet_id     = data.aws_ssm_parameter.subnet_outputs[each.value.subnet_key].value
+  allocation_id = module.elastic_ip[each.value.eip_key].allocation_id
+  tags = merge(try(each.value.tags, {}), {
+    DeployedBy = "Debarshi From IAC team"
+  })
 }
 
-resource "aws_ssm_parameter" "eip_public_ip" {
-  name  = "/terraform/stage2/eip_public_ip"
+# Store outputs in SSM for other stages to use
+resource "aws_ssm_parameter" "elastic_ip_outputs" {
+  for_each = module.elastic_ip
+
+  name  = "/terraform/stage2/eip/${each.key}/allocation_id"
   type  = "String"
-  value = module.elastic_ip.eip_public_ip
-  tags  = var.common_tags
+  value = each.value.allocation_id
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "networking-services"
+  }
+}
+
+resource "aws_ssm_parameter" "nat_gateway_outputs" {
+  for_each = module.nat_gateway
+
+  name  = "/terraform/stage2/nat/${each.key}/id"
+  type  = "String"
+  value = each.value.id
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "networking-services"
+  }
 }

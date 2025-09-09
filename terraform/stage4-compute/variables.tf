@@ -1,22 +1,8 @@
-# Stage 4 Compute Variables
+# Stage 4 Compute Variables - Following your GitHub repository style
 
-# General Variables
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "dev"
-}
-
-variable "project_name" {
-  description = "Project name"
-  type        = string
-  default     = "cloudbuilder-prototype"
+# Simple variables with default = {} pattern
+variable "instances" {
+  default = {}
 }
 
 variable "username" {
@@ -42,28 +28,16 @@ variable "common_tags" {
   }
 }
 
-# Key Pair Variables
-variable "key_pair_name" {
-  description = "Name of the key pair"
-  type        = string
-  default     = "windows-keypair"
-}
-
-variable "public_key" {
-  description = "Public key content"
-  type        = string
-  default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7... # Add your default public key or leave empty"
-}
-
-# Windows Instance Variables
-variable "windows_instance_type" {
-  description = "Instance type for Windows server"
-  type        = string
-  default     = "t3.medium"
-}
-
-variable "windows_instance_name" {
-  description = "Name of the Windows instance"
-  type        = string
-  default     = "windows-web-server"
+# Compute Instances Configuration
+variable "instances" {
+  description = "Configuration for compute instances"
+  type = map(object({
+    instance_type = string
+    instance_name = string
+    os_type       = string
+    ami_id        = optional(string)
+    user_data     = optional(string)
+    tags          = optional(map(string), {})
+  }))
+  default = {}
 }

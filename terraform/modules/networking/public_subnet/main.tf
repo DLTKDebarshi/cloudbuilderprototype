@@ -1,17 +1,13 @@
-# Public Subnet Module
 resource "aws_subnet" "public" {
   vpc_id                  = var.vpc_id
   cidr_block              = var.subnet_cidr
   availability_zone       = var.availability_zone
   map_public_ip_on_launch = var.map_public_ip_on_launch
 
-  tags = merge(
-    {
-      Name = var.subnet_name
-      Type = "Public"
-    },
-    var.tags
-  )
+  tags = merge(var.tags, {
+    Name = var.subnet_name
+    Type = "Public"
+  })
 }
 
 output "subnet_id" {

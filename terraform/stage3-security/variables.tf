@@ -1,34 +1,33 @@
-# Stage 3 Security Variables
+# Stage 3 Security Variables - Following your GitHub repository style
 
-# General Variables
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
+# Simple variables with default = {} pattern
+variable "security_groups" {
+  default = {}
 }
 
-variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "dev"
-}
-
-variable "project_name" {
-  description = "Project name"
-  type        = string
-  default     = "cloudbuilder-prototype"
-}
-
-variable "username" {
-  description = "Username from GitHub secrets"
-  type        = string
-  sensitive   = true
-}
-
-variable "password" {
-  description = "Password from GitHub secrets"
-  type        = string
-  sensitive   = true
+# Security Groups Configuration (for_each pattern)
+variable "security_groups" {
+  description = "Configuration for security groups"
+  type = map(object({
+    security_group_name = string
+    description         = string
+    ingress_rules = list(object({
+      from_port   = number
+      to_port     = number
+      protocol    = string
+      cidr_blocks = list(string)
+      description = optional(string)
+    }))
+    egress_rules = list(object({
+      from_port   = number
+      to_port     = number
+      protocol    = string
+      cidr_blocks = list(string)
+      description = optional(string)
+    }))
+    tags = optional(map(string), {})
+  }))
+  default = {}
 }
 
 variable "common_tags" {

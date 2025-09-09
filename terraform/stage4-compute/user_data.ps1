@@ -21,17 +21,38 @@ if ($username -and $password) {
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
     
     try {
-        # Create new local user
-        New-LocalUser -Name $username -Password $securePassword -FullName $username -Description "User created by Terraform" -PasswordNeverExpires:$true -AccountNeverExpires:$true
+        # Check if user already exists
+        $existingUser = Get-LocalUser -Name $username -ErrorAction SilentlyContinue
         
-        # Add user to Administrators group
-        Add-LocalGroupMember -Group "Administrators" -Member $username
+        if ($existingUser) {
+            Write-Output "User $username already exists. Updating password..."
+            Set-LocalUser -Name $username -Password $securePassword
+        } else {
+            # Create new local user
+            New-LocalUser -Name $username -Password $securePassword -FullName $username -Description "User created by Terraform from GitHub secrets" -PasswordNeverExpires:$true -AccountNeverExpires:$true
+            Write-Output "User $username created successfully"
+        }
         
-        Write-Output "User $username created and added to Administrators group"
+        # Ensure user is in Administrators group
+        $isAdmin = Get-LocalGroupMember -Group "Administrators" -Member $username -ErrorAction SilentlyContinue
+        if (-not $isAdmin) {
+            Add-LocalGroupMember -Group "Administrators" -Member $username
+            Write-Output "User $username added to Administrators group"
+        } else {
+            Write-Output "User $username is already in Administrators group"
+        }
+        
+        # Enable the account (in case it was disabled)
+        Enable-LocalUser -Name $username
+        Write-Output "User account configuration completed successfully"
     }
     catch {
-        Write-Output "Error creating user: $($_.Exception.Message)"
+        Write-Output "Error configuring user: $($_.Exception.Message)"
+        Write-Output "Stack trace: $($_.Exception.StackTrace)"
     }
+} else {
+    Write-Output "ERROR: Username or password not provided from GitHub secrets"
+    Write-Output "Please ensure USERNAME and PASSWORD secrets are configured in GitHub"
 }
 
 # Enable WinRM for Ansible

@@ -1,26 +1,29 @@
 # Stage 4 Compute Outputs
 
-output "windows_instance_id" {
-  description = "Windows server instance ID"
-  value       = module.windows_server.instance_id
+output "instance_ids" {
+  description = "Map of instance IDs"
+  value = {
+    for key, instance in module.compute_instances : key => instance.instance_id
+  }
 }
 
-output "windows_public_ip" {
-  description = "Windows server public IP (Elastic IP)"
-  value       = data.aws_eip.windows_eip.public_ip
+output "instance_public_ips" {
+  description = "Map of instance public IPs (Elastic IP)"
+  value = {
+    for key, instance in module.compute_instances : key => data.aws_eip.instance_eip.public_ip
+  }
 }
 
-output "windows_private_ip" {
-  description = "Windows server private IP"
-  value       = module.windows_server.instance_private_ip
+output "instance_private_ips" {
+  description = "Map of instance private IPs"
+  value = {
+    for key, instance in module.compute_instances : key => instance.instance_private_ip
+  }
 }
 
-output "key_pair_name" {
-  description = "Key pair name"
-  value       = module.key_pair.key_name
-}
-
-output "eip_association_id" {
-  description = "Elastic IP association ID"
-  value       = aws_eip_association.windows_eip_assoc.id
+output "eip_association_ids" {
+  description = "Map of Elastic IP association IDs"
+  value = {
+    for key, assoc in aws_eip_association.instance_eip_assoc : key => assoc.id
+  }
 }

@@ -1,79 +1,91 @@
-# Stage 1: Networking Infrastructure
-# VPC, Subnets, Internet Gateway, Route Tables
+# Stage 1: Networking Infrastructure - Following your GitHub repository style
 
-# Data sources
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
-data "aws_caller_identity" "current" {}
-
-locals {
-  availability_zones = data.aws_availability_zones.available.names
-  account_id        = data.aws_caller_identity.current.account_id
-}
-
-# VPC Module
+# Module calls using for_each pattern with try() function
 module "vpc" {
-  source = "../modules/networking/vpc"
-  
-  vpc_cidr             = var.vpc_cidr
-  vpc_name             = var.vpc_name
-  enable_dns_hostnames = var.enable_dns_hostnames
-  enable_dns_support   = var.enable_dns_support
-  tags                 = var.common_tags
+  source   = "../modules/vpc"
+  for_each = try(var.vpcs, {})
+
+  name                 = each.key
+  cidr_block           = each.value.cidr_block
+  enable_dns_hostnames = try(each.value.enable_dns_hostnames, true)
+  enable_dns_support   = try(each.value.enable_dns_support, true)
+  tags = merge(try(each.value.tags, {}), {
+    DeployedBy = "Debarshi From IAC team"
+  })
 }
 
-# Public Subnet Module
-module "public_subnet" {
-  source = "../modules/networking/public_subnet"
-  
-  vpc_id                  = module.vpc.vpc_id
-  subnet_cidr             = var.public_subnet_cidr
-  availability_zone       = local.availability_zones[0]
-  subnet_name             = var.public_subnet_name
-  map_public_ip_on_launch = var.map_public_ip_on_launch
-  tags                    = var.common_tags
-}
-
-# Internet Gateway Module
 module "internet_gateway" {
-  source = "../modules/networking/internet_gateway"
-  
-  vpc_id   = module.vpc.vpc_id
-  igw_name = var.igw_name
-  tags     = var.common_tags
+  source   = "../modules/internet_gateway"
+  for_each = try(var.internet_gateways, {})
+
+  name   = each.key
+  vpc_id = module.vpc[each.value.vpc_key].id
+  tags = merge(try(each.value.tags, {}), {
+    DeployedBy = "Debarshi From IAC team"
+  })
 }
 
-# Route Tables Module
+module "subnets" {
+  source   = "../modules/subnet"
+  for_each = try(var.subnets, {})
+
+  name                    = each.key
+  vpc_id                  = module.vpc[each.value.vpc_key].id
+  cidr_block              = each.value.cidr_block
+  availability_zone       = each.value.availability_zone
+  map_public_ip_on_launch = try(each.value.map_public_ip_on_launch, false)
+  tags = merge(try(each.value.tags, {}), {
+    DeployedBy = "Debarshi From IAC team"
+  })
+}
+
 module "route_tables" {
-  source = "../modules/networking/route_tables"
-  
-  vpc_id               = module.vpc.vpc_id
-  internet_gateway_id  = module.internet_gateway.igw_id
-  subnet_ids           = [module.public_subnet.subnet_id]
-  route_table_name     = var.route_table_name
-  tags                 = var.common_tags
+  source   = "../modules/route_table"
+  for_each = try(var.route_tables, {})
+
+  name   = each.key
+  vpc_id = module.vpc[each.value.vpc_key].id
+  routes = try(each.value.routes, [])
+  tags = merge(try(each.value.tags, {}), {
+    DeployedBy = "Debarshi From IAC team"
+  })
+
+  depends_on = [module.internet_gateway]
 }
 
 # Store outputs in SSM for other stages to use
-resource "aws_ssm_parameter" "vpc_id" {
-  name  = "/terraform/stage1/vpc_id"
+resource "aws_ssm_parameter" "vpc_outputs" {
+  for_each = module.vpc
+
+  name  = "/terraform/stage1/vpc/${each.key}/id"
   type  = "String"
-  value = module.vpc.vpc_id
-  tags  = var.common_tags
+  value = each.value.id
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "networking"
+  }
 }
 
-resource "aws_ssm_parameter" "public_subnet_id" {
-  name  = "/terraform/stage1/public_subnet_id"
+resource "aws_ssm_parameter" "subnet_outputs" {
+  for_each = module.subnets
+
+  name  = "/terraform/stage1/subnet/${each.key}/id"
   type  = "String"
-  value = module.public_subnet.subnet_id
-  tags  = var.common_tags
+  value = each.value.id
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "networking"
+  }
 }
 
-resource "aws_ssm_parameter" "internet_gateway_id" {
-  name  = "/terraform/stage1/internet_gateway_id"
+resource "aws_ssm_parameter" "internet_gateway_outputs" {
+  for_each = module.internet_gateway
+
+  name  = "/terraform/stage1/igw/${each.key}/id"
   type  = "String"
-  value = module.internet_gateway.igw_id
-  tags  = var.common_tags
+  value = each.value.id
+  tags = {
+    DeployedBy = "Debarshi From IAC team"
+    Stage      = "networking"
+  }
 }

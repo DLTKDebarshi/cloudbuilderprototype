@@ -1,8 +1,8 @@
 # Terraform Variables File
 
-aws_region     = "us-east-1"
-environment    = "dev"
-project_name   = "cloudbuilder-prototype"
+aws_region   = "us-east-1"
+environment  = "dev"
+project_name = "cloudbuilder-prototype"
 
 terraform_state_bucket = "your-terraform-state-bucket"
 
@@ -21,15 +21,15 @@ public_subnet_cidr      = "10.0.1.0/24"
 public_subnet_name      = "cloudbuilder-public-subnet"
 map_public_ip_on_launch = true
 
-igw_name          = "cloudbuilder-igw"
-route_table_name  = "cloudbuilder-public-rt"
+igw_name         = "cloudbuilder-igw"
+route_table_name = "cloudbuilder-public-rt"
 
 security_group_name        = "cloudbuilder-windows-sg"
 security_group_description = "Security group for Windows web server"
 
 key_pair_name = "cloudbuilder-keypair"
 # IMPORTANT: Replace the value below with your real single-line OpenSSH RSA public key
-public_key    = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQChd7FABIkmRgV+/dq6CL/ttq2afm0QDePKby8vCDFp5ryEmTrq+wvKbU1hesro8XyUYt99+x27LAJ0N8MU4fEqmLnEVwWs/8hbagjyWDNxzNnXVe97gMPICUlEw8pZ03hNTHjCfbkvgaV/iMgdOIHtk2Fyz3d1hFYHzdprvouu1P/xDMfkiO/uMS636hoirkmT6xxykwp+isBnEK+4KGdFEhTUs6TyAXiL22dqwKWoJ+8Unkc4K9iYVHjcz58hA0nYmBb0mHGScvsWCJpWLr0jsdyHTGZth4tVMuskz6iK4bvl1gEzd9JkLCgeLt06bPKtzaQFKc8Z/HkPG+L749ad cloudbuilder@prototype"
+public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQChd7FABIkmRgV+/dq6CL/ttq2afm0QDePKby8vCDFp5ryEmTrq+wvKbU1hesro8XyUYt99+x27LAJ0N8MU4fEqmLnEVwWs/8hbagjyWDNxzNnXVe97gMPICUlEw8pZ03hNTHjCfbkvgaV/iMgdOIHtk2Fyz3d1hFYHzdprvouu1P/xDMfkiO/uMS636hoirkmT6xxykwp+isBnEK+4KGdFEhTUs6TyAXiL22dqwKWoJ+8Unkc4K9iYVHjcz58hA0nYmBb0mHGScvsWCJpWLr0jsdyHTGZth4tVMuskz6iK4bvl1gEzd9JkLCgeLt06bPKtzaQFKc8Z/HkPG+L749ad cloudbuilder@prototype"
 
 windows_instance_type = "t3.medium"
 windows_instance_name = "cloudbuilder-windows"

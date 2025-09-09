@@ -8,7 +8,7 @@ terraform {
       version = "~> 5.0"
     }
   }
-  
+
   backend "s3" {
     # Backend configuration will be provided via command line
     # -backend-config="bucket=cloudbuilderprototype-tfstate-prod"
@@ -19,7 +19,7 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
-  
+
   default_tags {
     tags = {
       Project     = var.project_name
