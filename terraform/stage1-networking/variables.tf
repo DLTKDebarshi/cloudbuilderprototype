@@ -25,6 +25,7 @@ variable "route_tables" {
   description = "Map of Route Table configurations"
   type = map(object({
     vpc_key = string
+    igw_key = optional(string)
     routes = optional(list(object({
       cidr_block  = string
       gateway_id  = string
@@ -42,6 +43,7 @@ variable "subnets" {
     cidr_block              = string
     availability_zone       = string
     map_public_ip_on_launch = optional(bool, false)
+    route_table_key         = optional(string)
     tags                    = optional(map(string), {})
   }))
   default = {}

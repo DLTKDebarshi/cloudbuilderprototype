@@ -1,5 +1,7 @@
 <powershell>
 # Windows Server User Data Script
+Write-Output "=== STARTING USERDATA SCRIPT ==="
+Write-Output "Current time: $(Get-Date)"
 
 # Set execution policy
 Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -8,6 +10,28 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 Start-Transcript -Path "C:\Windows\Temp\userdata.log" -Append
 
 Write-Output "Starting Windows Server configuration..."
+Write-Output "PowerShell version: $($PSVersionTable.PSVersion)"
+
+# Immediately enable RDP - do this first
+Write-Output "=== ENABLING RDP FIRST ==="
+try {
+    # Multiple methods to ensure RDP is enabled
+    Write-Output "Method 1: Registry changes for RDP"
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+    
+    Write-Output "Method 2: PowerShell cmdlets for RDP"
+    Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0 -Force
+    Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Value 0 -Force
+    
+    Write-Output "Method 3: Firewall rules for RDP"
+    netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+    Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    
+    Write-Output "RDP enabled successfully using multiple methods"
+} catch {
+    Write-Output "Error in RDP setup: $($_.Exception.Message)"
+}
 
 # Create local user account with credentials from GitHub secrets
 $username = "${username}"
@@ -285,5 +309,22 @@ Write-Output "IIS is running and ready for application deployment."
 Write-Output "Status file created at C:\CloudBuilderStatus.json"
 Write-Output "=== END CONFIGURATION STATUS ==="
 
+# Final verification
+Write-Output "=== FINAL STATUS CHECK ==="
+Write-Output "RDP Status: $((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections').fDenyTSConnections)"
+Write-Output "User Authentication: $((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'UserAuthentication').UserAuthentication)"
+
+# Create a simple status file on the C: drive
+$statusContent = @"
+UserData Script Completed: $(Get-Date)
+RDP Enabled: $((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections').fDenyTSConnections -eq 0)
+WinRM Enabled: $(Get-Service WinRM | Select-Object -ExpandProperty Status)
+Firewall Status: $(Get-NetFirewallProfile | Select-Object Name, Enabled)
+Username: ${username}
+"@
+
+$statusContent | Out-File -FilePath "C:\UserDataStatus.txt" -Encoding UTF8
+
+Write-Output "=== USERDATA SCRIPT COMPLETED SUCCESSFULLY ==="
 Stop-Transcript
 </powershell>

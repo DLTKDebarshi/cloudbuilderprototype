@@ -62,6 +62,17 @@ resource "aws_route" "internet_gateway_routes" {
   gateway_id             = module.internet_gateway[each.value.igw_key].id
 }
 
+# Associate subnets with route tables
+resource "aws_route_table_association" "subnet_associations" {
+  for_each = {
+    for k, v in try(var.subnets, {}) : k => v
+    if try(v.route_table_key, null) != null
+  }
+
+  subnet_id      = module.subnets[each.key].id
+  route_table_id = module.route_tables[each.value.route_table_key].id
+}
+
 # Store outputs in SSM for other stages to use
 resource "aws_ssm_parameter" "vpc_outputs" {
   for_each = module.vpc
